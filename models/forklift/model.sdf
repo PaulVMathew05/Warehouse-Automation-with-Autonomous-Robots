@@ -1,0 +1,354 @@
+<?xml version="1.0" ?>
+<!--
+  Warehouse Forklift v2  —  Electric Counterbalanced Forklift
+  ============================================================
+  Body: 1.3 × 2.0 × 1.5 m  (W × D × H)
+  Mast: 3.5 m tall with prismatic fork joint
+  Drive: Skid-steer (2 rear drive wheels + 2 passive front)
+  Payload: up to 1500 kg crates
+
+  Topics:
+    /forklift_N/cmd_vel        ← geometry_msgs/Twist
+    /forklift_N/odom           → nav_msgs/Odometry
+    /forklift_N/fork_height    ← std_msgs/Float64 (0–2.2)
+    /forklift_N/joint_states   → sensor_msgs/JointState
+-->
+<sdf version="1.9">
+  <model name="forklift">
+    <pose>0 0 0.45 0 0 0</pose>
+
+    <!-- ── Chassis / counterweight ─────────────────────────── -->
+    <link name="base_link">
+      <inertial>
+        <mass>3500.0</mass>
+        <!-- Heavy counterweight at rear keeps forklift stable -->
+        <pose>0 -0.3 0 0 0 0</pose>
+        <inertia>
+          <ixx>820</ixx><iyy>1240</iyy><izz>980</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <!-- Main chassis block -->
+      <collision name="chassis_col">
+        <pose>0 -0.1 0 0 0 0</pose>
+        <geometry><box><size>1.30 2.00 1.50</size></box></geometry>
+        <surface>
+          <friction><ode><mu>0.6</mu><mu2>0.4</mu2></ode></friction>
+          <contact><ode><max_vel>0.02</max_vel><min_depth>0.001</min_depth></ode></contact>
+        </surface>
+      </collision>
+
+      <!-- Chassis visual — Yellow body -->
+      <visual name="chassis_vis">
+        <pose>0 -0.1 0 0 0 0</pose>
+        <geometry><box><size>1.30 2.00 1.50</size></box></geometry>
+        <material>
+          <ambient>1.0 0.82 0 1</ambient>
+          <diffuse>1.0 0.80 0 1</diffuse>
+          <specular>0.4 0.32 0 0.5</specular>
+        </material>
+      </visual>
+
+      <!-- Engine cover hump (rear, darker yellow) -->
+      <visual name="hump_vis">
+        <pose>0 -0.6 0.55 0 0 0</pose>
+        <geometry><box><size>1.10 0.80 0.45</size></box></geometry>
+        <material><ambient>0.9 0.70 0 1</ambient><diffuse>0.9 0.70 0 1</diffuse></material>
+      </visual>
+
+      <!-- Cab frame (slightly transparent windscreen effect) -->
+      <visual name="cab_vis">
+        <pose>0 0.35 0.35 0 0 0</pose>
+        <geometry><box><size>1.05 1.00 0.85</size></box></geometry>
+        <material>
+          <ambient>1.0 0.82 0 0.85</ambient>
+          <diffuse>1.0 0.82 0 0.85</diffuse>
+          <specular>0.5 0.4 0 0.3</specular>
+        </material>
+      </visual>
+
+      <!-- ROPS cage posts (4 vertical bars) -->
+      <visual name="rops_fl"><pose>-0.52 0.82 1.05 0 0 0</pose>
+        <geometry><box><size>0.07 0.07 1.50</size></box></geometry>
+        <material><ambient>1 0.67 0 1</ambient><diffuse>1 0.67 0 1</diffuse></material>
+      </visual>
+      <visual name="rops_fr"><pose>0.52 0.82 1.05 0 0 0</pose>
+        <geometry><box><size>0.07 0.07 1.50</size></box></geometry>
+        <material><ambient>1 0.67 0 1</ambient><diffuse>1 0.67 0 1</diffuse></material>
+      </visual>
+      <visual name="rops_rl"><pose>-0.52 -0.08 1.05 0 0 0</pose>
+        <geometry><box><size>0.07 0.07 1.50</size></box></geometry>
+        <material><ambient>1 0.67 0 1</ambient><diffuse>1 0.67 0 1</diffuse></material>
+      </visual>
+      <visual name="rops_rr"><pose>0.52 -0.08 1.05 0 0 0</pose>
+        <geometry><box><size>0.07 0.07 1.50</size></box></geometry>
+        <material><ambient>1 0.67 0 1</ambient><diffuse>1 0.67 0 1</diffuse></material>
+      </visual>
+      <!-- ROPS overhead guard -->
+      <visual name="rops_roof">
+        <pose>0 0.37 1.82 0 0 0</pose>
+        <geometry><box><size>1.15 1.10 0.07</size></box></geometry>
+        <material><ambient>1 0.67 0 1</ambient><diffuse>1 0.67 0 1</diffuse></material>
+      </visual>
+
+      <!-- Driver seat -->
+      <visual name="seat_vis">
+        <pose>0 0.28 0.02 0 0 0</pose>
+        <geometry><box><size>0.50 0.40 0.15</size></box></geometry>
+        <material><ambient>0.13 0.07 0 1</ambient><diffuse>0.13 0.07 0 1</diffuse></material>
+      </visual>
+      <visual name="seat_back_vis">
+        <pose>0 0.05 0.28 -0.20 0 0</pose>
+        <geometry><box><size>0.50 0.10 0.50</size></box></geometry>
+        <material><ambient>0.13 0.07 0 1</ambient><diffuse>0.13 0.07 0 1</diffuse></material>
+      </visual>
+
+      <!-- Steering wheel -->
+      <visual name="steer_vis">
+        <pose>0.22 0.58 0.42 0 0.5 0</pose>
+        <geometry><cylinder><radius>0.18</radius><length>0.025</length></geometry>
+        <material><ambient>0.07 0.07 0.07 1</ambient><diffuse>0.07 0.07 0.07 1</diffuse></material>
+      </visual>
+
+      <!-- Warning beacon (orange, top) -->
+      <visual name="beacon_vis">
+        <pose>0 0.37 1.92 0 0 0</pose>
+        <geometry><cylinder><radius>0.08</radius><length>0.22</length></geometry>
+        <material>
+          <ambient>1 0.40 0 1</ambient>
+          <diffuse>1 0.40 0 1</diffuse>
+          <emissive>0.6 0.20 0 0.8</emissive>
+        </material>
+      </visual>
+
+      <!-- Mast uprights (2 vertical rails) -->
+      <visual name="mast_l">
+        <pose>-0.44 1.05 1.10 0 0 0</pose>
+        <geometry><box><size>0.09 0.09 3.50</size></box></geometry>
+        <material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.65 0.65 0.65 1</diffuse></material>
+      </visual>
+      <visual name="mast_r">
+        <pose>0.44 1.05 1.10 0 0 0</pose>
+        <geometry><box><size>0.09 0.09 3.50</size></box></geometry>
+        <material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.65 0.65 0.65 1</diffuse></material>
+      </visual>
+      <!-- Mast crossbar -->
+      <visual name="mast_bar">
+        <pose>0 1.05 2.6 0 0 0</pose>
+        <geometry><box><size>0.95 0.08 0.08</size></box></geometry>
+        <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- ── Large rear drive wheel LEFT ──────────────────────── -->
+    <link name="wheel_rear_left">
+      <pose>-0.76 -0.70 -0.03 -1.5708 0 0</pose>
+      <inertial><mass>15.0</mass>
+        <inertia><ixx>0.282</ixx><iyy>0.282</iyy><izz>0.535</izz></inertia>
+      </inertial>
+      <collision name="c">
+        <geometry><cylinder><radius>0.42</radius><length>0.24</length></geometry>
+        <surface><friction><ode><mu>1.8</mu><mu2>0.6</mu2></ode></friction></surface>
+      </collision>
+      <visual name="v">
+        <geometry><cylinder><radius>0.42</radius><length>0.24</length></geometry>
+        <material><ambient>0.06 0.06 0.07 1</ambient><diffuse>0.06 0.06 0.07 1</diffuse></material>
+      </visual>
+      <visual name="hubcap">
+        <pose>0 0.13 0 0 0 0</pose>
+        <geometry><cylinder><radius>0.18</radius><length>0.02</length></geometry>
+        <material><ambient>0.55 0.55 0.35 1</ambient><diffuse>0.55 0.55 0.35 1</diffuse></material>
+      </visual>
+    </link>
+    <joint name="wheel_rear_left_joint" type="revolute">
+      <parent>base_link</parent><child>wheel_rear_left</child>
+      <axis><xyz>0 0 1</xyz>
+        <limit><effort>3000</effort><velocity>8</velocity></limit>
+        <dynamics><damping>0.01</damping></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ── Large rear drive wheel RIGHT ─────────────────────── -->
+    <link name="wheel_rear_right">
+      <pose>0.76 -0.70 -0.03 -1.5708 0 0</pose>
+      <inertial><mass>15.0</mass>
+        <inertia><ixx>0.282</ixx><iyy>0.282</iyy><izz>0.535</izz></inertia>
+      </inertial>
+      <collision name="c">
+        <geometry><cylinder><radius>0.42</radius><length>0.24</length></geometry>
+        <surface><friction><ode><mu>1.8</mu><mu2>0.6</mu2></ode></friction></surface>
+      </collision>
+      <visual name="v">
+        <geometry><cylinder><radius>0.42</radius><length>0.24</length></geometry>
+        <material><ambient>0.06 0.06 0.07 1</ambient><diffuse>0.06 0.06 0.07 1</diffuse></material>
+      </visual>
+      <visual name="hubcap">
+        <pose>0 -0.13 0 0 0 0</pose>
+        <geometry><cylinder><radius>0.18</radius><length>0.02</length></geometry>
+        <material><ambient>0.55 0.55 0.35 1</ambient><diffuse>0.55 0.55 0.35 1</diffuse></material>
+      </visual>
+    </link>
+    <joint name="wheel_rear_right_joint" type="revolute">
+      <parent>base_link</parent><child>wheel_rear_right</child>
+      <axis><xyz>0 0 1</xyz>
+        <limit><effort>3000</effort><velocity>8</velocity></limit>
+        <dynamics><damping>0.01</damping></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ── Front passive (steer) wheel LEFT ─────────────────── -->
+    <link name="wheel_front_left">
+      <pose>-0.68 0.88 -0.15 -1.5708 0 0</pose>
+      <inertial><mass>5.0</mass>
+        <inertia><ixx>0.065</ixx><iyy>0.065</iyy><izz>0.115</izz></inertia>
+      </inertial>
+      <collision name="c">
+        <geometry><cylinder><radius>0.30</radius><length>0.20</length></geometry>
+        <surface><friction><ode><mu>1.5</mu><mu2>0.5</mu2></ode></friction></surface>
+      </collision>
+      <visual name="v">
+        <geometry><cylinder><radius>0.30</radius><length>0.20</length></geometry>
+        <material><ambient>0.06 0.06 0.07 1</ambient><diffuse>0.06 0.06 0.07 1</diffuse></material>
+      </visual>
+    </link>
+    <joint name="wheel_front_left_joint" type="revolute">
+      <parent>base_link</parent><child>wheel_front_left</child>
+      <axis><xyz>0 0 1</xyz>
+        <limit><effort>0</effort><velocity>8</velocity></limit>
+        <dynamics><damping>0.005</damping></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ── Front passive (steer) wheel RIGHT ────────────────── -->
+    <link name="wheel_front_right">
+      <pose>0.68 0.88 -0.15 -1.5708 0 0</pose>
+      <inertial><mass>5.0</mass>
+        <inertia><ixx>0.065</ixx><iyy>0.065</iyy><izz>0.115</izz></inertia>
+      </inertial>
+      <collision name="c">
+        <geometry><cylinder><radius>0.30</radius><length>0.20</length></geometry>
+        <surface><friction><ode><mu>1.5</mu><mu2>0.5</mu2></ode></friction></surface>
+      </collision>
+      <visual name="v">
+        <geometry><cylinder><radius>0.30</radius><length>0.20</length></geometry>
+        <material><ambient>0.06 0.06 0.07 1</ambient><diffuse>0.06 0.06 0.07 1</diffuse></material>
+      </visual>
+    </link>
+    <joint name="wheel_front_right_joint" type="revolute">
+      <parent>base_link</parent><child>wheel_front_right</child>
+      <axis><xyz>0 0 1</xyz>
+        <limit><effort>0</effort><velocity>8</velocity></limit>
+        <dynamics><damping>0.005</damping></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ── Fork carriage (prismatic lift) ───────────────────── -->
+    <link name="fork_carriage">
+      <pose>0 1.05 0.18 0 0 0</pose>
+      <inertial><mass>80.0</mass>
+        <inertia><ixx>2.5</ixx><iyy>1.8</iyy><izz>2.0</izz></inertia>
+      </inertial>
+      <collision name="carriage_col">
+        <geometry><box><size>1.05 0.12 0.45</size></box></geometry>
+        <surface><friction><ode><mu>0.3</mu><mu2>0.3</mu2></ode></friction></surface>
+      </collision>
+      <visual name="carriage_vis">
+        <geometry><box><size>1.05 0.12 0.45</size></box></geometry>
+        <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
+      </visual>
+      <!-- Fork arm LEFT -->
+      <collision name="fork_l_col">
+        <pose>-0.32 0.75 -0.195 0 0 0</pose>
+        <geometry><box><size>0.16 1.50 0.09</size></box></geometry>
+      </collision>
+      <visual name="fork_l_vis">
+        <pose>-0.32 0.75 -0.195 0 0 0</pose>
+        <geometry><box><size>0.16 1.50 0.09</size></box></geometry>
+        <material><ambient>0.75 0.75 0.75 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse></material>
+      </visual>
+      <!-- Fork arm RIGHT -->
+      <collision name="fork_r_col">
+        <pose>0.32 0.75 -0.195 0 0 0</pose>
+        <geometry><box><size>0.16 1.50 0.09</size></box></geometry>
+      </collision>
+      <visual name="fork_r_vis">
+        <pose>0.32 0.75 -0.195 0 0 0</pose>
+        <geometry><box><size>0.16 1.50 0.09</size></box></geometry>
+        <material><ambient>0.75 0.75 0.75 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse></material>
+      </visual>
+    </link>
+    <joint name="fork_lift_joint" type="prismatic">
+      <parent>base_link</parent>
+      <child>fork_carriage</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>0</lower>
+          <upper>2.20</upper>
+          <effort>15000</effort>
+          <velocity>0.6</velocity>
+        </limit>
+        <dynamics><damping>100</damping><friction>50</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- Gazebo Plugins                                         -->
+    <!-- ══════════════════════════════════════════════════════ -->
+
+    <!-- Skid-steer drive (rear wheels only) -->
+    <plugin filename="gz-sim-diff-drive-system"
+            name="gz::sim::systems::DiffDrive">
+      <left_joint>wheel_rear_left_joint</left_joint>
+      <right_joint>wheel_rear_right_joint</right_joint>
+      <wheel_separation>1.52</wheel_separation>
+      <wheel_radius>0.42</wheel_radius>
+      <odom_publish_frequency>20</odom_publish_frequency>
+      <topic>cmd_vel</topic>
+      <odom_topic>odom</odom_topic>
+      <tf_topic>tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_link</child_frame_id>
+      <max_linear_acceleration>1.5</max_linear_acceleration>
+      <max_angular_acceleration>2.0</max_angular_acceleration>
+    </plugin>
+
+    <!-- Fork lift joint position controller -->
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>fork_lift_joint</joint_name>
+      <topic>fork_height_cmd</topic>
+      <p_gain>500</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>50</d_gain>
+      <i_max>100</i_max>
+      <i_min>-100</i_min>
+      <cmd_max>15000</cmd_max>
+      <cmd_min>-15000</cmd_min>
+    </plugin>
+
+    <!-- Joint state publisher -->
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>joint_states</topic>
+      <update_rate>20</update_rate>
+    </plugin>
+
+    <!-- Linear battery -->
+    <plugin filename="gz-sim-linearbatteryplugin-system"
+            name="gz::sim::systems::LinearBatteryPlugin">
+      <battery_name>forklift_battery</battery_name>
+      <voltage>48.0</voltage>
+      <open_circuit_voltage_constant_coef>48.0</open_circuit_voltage_constant_coef>
+      <open_circuit_voltage_linear_coef>-8.0</open_circuit_voltage_linear_coef>
+      <initial_charge>200.0</initial_charge>
+      <capacity>200.0</capacity>
+      <resistance>0.05</resistance>
+      <smooth_current_tau>2.5</smooth_current_tau>
+      <power_load>22.0</power_load>
+      <start_on_motion>true</start_on_motion>
+    </plugin>
+
+  </model>
+</sdf>

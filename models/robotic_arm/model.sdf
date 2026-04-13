@@ -1,0 +1,299 @@
+<?xml version="1.0" ?>
+<!--
+  Warehouse Robotic Arm v2  —  5-DOF Industrial Arm
+  ==================================================
+  Kinematics:
+    turret_joint   : revolute, Z-axis  (−π … +π)
+    shoulder_joint : revolute, Y-axis  (0 … π)
+    elbow_joint    : revolute, Y-axis  (−π/2 … π)
+    wrist_joint    : revolute, Y-axis  (−π … π)
+    gripper_joint  : prismatic, X-axis (0 … 0.18 m)
+
+  Topics (joint position controllers):
+    /arm/turret_cmd   ← std_msgs/Float64  (rad)
+    /arm/shoulder_cmd ← std_msgs/Float64  (rad)
+    /arm/elbow_cmd    ← std_msgs/Float64  (rad)
+    /arm/wrist_cmd    ← std_msgs/Float64  (rad)
+    /arm/gripper_cmd  ← std_msgs/Float64  (m)
+    /arm/joint_states → sensor_msgs/JointState
+-->
+<sdf version="1.9">
+  <model name="robotic_arm">
+    <!-- Mount at (25.5, 0, 0) in Gazebo world — placed in world SDF -->
+    <static>false</static>
+
+    <!-- ── Fixed base plate ──────────────────────────────────── -->
+    <link name="arm_base">
+      <inertial>
+        <mass>80.0</mass>
+        <inertia><ixx>3.0</ixx><iyy>3.0</iyy><izz>5.0</izz></inertia>
+      </inertial>
+      <collision name="c">
+        <geometry><cylinder><radius>1.0</radius><length>0.18</length></geometry>
+        <surface><friction><ode><mu>2.0</mu><mu2>2.0</mu2></ode></friction></surface>
+      </collision>
+      <visual name="v">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry><cylinder><radius>1.0</radius><length>0.18</length></geometry>
+        <material>
+          <ambient>0.13 0.20 0.27 1</ambient>
+          <diffuse>0.15 0.22 0.30 1</diffuse>
+          <specular>0.3 0.35 0.4 0.5</specular>
+        </material>
+      </visual>
+    </link>
+
+    <!-- ── Turret (rotates around Z) ────────────────────────── -->
+    <link name="turret">
+      <pose>0 0 0.18 0 0 0</pose>
+      <inertial>
+        <mass>30.0</mass>
+        <inertia><ixx>0.8</ixx><iyy>0.8</iyy><izz>1.2</izz></inertia>
+      </inertial>
+      <collision name="c">
+        <geometry><cylinder><radius>0.42</radius><length>0.55</length></geometry>
+      </collision>
+      <visual name="v">
+        <pose>0 0 0.275 0 0 0</pose>
+        <geometry><cylinder><radius>0.42</radius><length>0.55</length></geometry>
+        <material>
+          <ambient>0.10 0.18 0.26 1</ambient>
+          <diffuse>0.12 0.20 0.28 1</diffuse>
+          <specular>0.4 0.45 0.5 0.5</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="turret_joint" type="revolute">
+      <parent>arm_base</parent>
+      <child>turret</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper><effort>500</effort><velocity>2.0</velocity></limit>
+        <dynamics><damping>8</damping><friction>2</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ── Upper arm (shoulder pivot) ───────────────────────── -->
+    <link name="upper_arm">
+      <pose>0 0 0.73 0 0 0</pose>
+      <inertial>
+        <mass>18.0</mass>
+        <pose>0 0 0.75 0 0 0</pose>
+        <inertia><ixx>2.5</ixx><iyy>2.5</iyy><izz>0.3</izz></inertia>
+      </inertial>
+      <!-- Shoulder sphere joint visual -->
+      <visual name="shoulder_sphere">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry><sphere><radius>0.18</radius></sphere></geometry>
+        <material><ambient>0.20 0.27 0.35 1</ambient><diffuse>0.20 0.27 0.35 1</diffuse></material>
+      </visual>
+      <!-- Upper arm rectangular body -->
+      <collision name="c">
+        <pose>0 0 0.75 0 0 0</pose>
+        <geometry><box><size>0.20 0.20 1.50</size></box></geometry>
+      </collision>
+      <visual name="v">
+        <pose>0 0 0.75 0 0 0</pose>
+        <geometry><box><size>0.20 0.20 1.50</size></box></geometry>
+        <material>
+          <ambient>1.0 0.40 0 1</ambient>
+          <diffuse>1.0 0.40 0 1</diffuse>
+          <specular>0.4 0.18 0 0.4</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="shoulder_joint" type="revolute">
+      <parent>turret</parent>
+      <child>upper_arm</child>
+      <pose>0 0 0.55 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>0.0</lower><upper>3.14159</upper><effort>600</effort><velocity>1.8</velocity></limit>
+        <dynamics><damping>12</damping><friction>3</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ── Lower arm (elbow pivot) ───────────────────────────── -->
+    <link name="lower_arm">
+      <inertial>
+        <mass>10.0</mass>
+        <pose>0 0 0.55 0 0 0</pose>
+        <inertia><ixx>0.8</ixx><iyy>0.8</iyy><izz>0.1</izz></inertia>
+      </inertial>
+      <!-- Elbow sphere joint visual -->
+      <visual name="elbow_sphere">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry><sphere><radius>0.15</radius></sphere></geometry>
+        <material><ambient>0.20 0.27 0.35 1</ambient><diffuse>0.20 0.27 0.35 1</diffuse></material>
+      </visual>
+      <collision name="c">
+        <pose>0 0 0.55 0 0 0</pose>
+        <geometry><box><size>0.17 0.17 1.10</size></box></geometry>
+      </collision>
+      <visual name="v">
+        <pose>0 0 0.55 0 0 0</pose>
+        <geometry><box><size>0.17 0.17 1.10</size></box></geometry>
+        <material>
+          <ambient>1.0 0.40 0 1</ambient>
+          <diffuse>1.0 0.40 0 1</diffuse>
+          <specular>0.4 0.18 0 0.4</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="elbow_joint" type="revolute">
+      <parent>upper_arm</parent>
+      <child>lower_arm</child>
+      <pose>0 0 1.5 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-1.57</lower><upper>3.14159</upper><effort>400</effort><velocity>2.0</velocity></limit>
+        <dynamics><damping>8</damping><friction>2</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ── Wrist ──────────────────────────────────────────────── -->
+    <link name="wrist">
+      <inertial>
+        <mass>3.5</mass>
+        <inertia><ixx>0.06</ixx><iyy>0.06</iyy><izz>0.06</izz></inertia>
+      </inertial>
+      <collision name="c">
+        <geometry><cylinder><radius>0.11</radius><length>0.28</length></geometry>
+      </collision>
+      <visual name="wrist_housing">
+        <geometry><cylinder><radius>0.11</radius><length>0.28</length></geometry>
+        <material><ambient>0.10 0.10 0.18 1</ambient><diffuse>0.10 0.10 0.18 1</diffuse></material>
+      </visual>
+    </link>
+    <joint name="wrist_joint" type="revolute">
+      <parent>lower_arm</parent>
+      <child>wrist</child>
+      <pose>0 0 1.1 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14</lower><upper>3.14</upper><effort>150</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>3</damping><friction>1</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ── Gripper finger 1 (left) ─────────────────────────── -->
+    <link name="gripper_left">
+      <inertial>
+        <mass>0.8</mass>
+        <inertia><ixx>0.001</ixx><iyy>0.001</iyy><izz>0.001</izz></inertia>
+      </inertial>
+      <collision name="c">
+        <pose>0 0 0.14 0 0 0</pose>
+        <geometry><box><size>0.055 0.04 0.28</size></box></geometry>
+      </collision>
+      <visual name="v">
+        <pose>0 0 0.14 0 0 0</pose>
+        <geometry><box><size>0.055 0.04 0.28</size></box></geometry>
+        <material><ambient>0.80 0.80 0.80 1</ambient><diffuse>0.80 0.80 0.80 1</diffuse><specular>0.5 0.5 0.5 0.5</specular></material>
+      </visual>
+    </link>
+    <joint name="gripper_left_joint" type="prismatic">
+      <parent>wrist</parent>
+      <child>gripper_left</child>
+      <pose>-0.07 0 0.14 0 0 0</pose>
+      <axis>
+        <xyz>-1 0 0</xyz>
+        <limit><lower>0</lower><upper>0.18</upper><effort>80</effort><velocity>0.4</velocity></limit>
+        <dynamics><damping>5</damping><friction>2</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ── Gripper finger 2 (right) ────────────────────────── -->
+    <link name="gripper_right">
+      <inertial>
+        <mass>0.8</mass>
+        <inertia><ixx>0.001</ixx><iyy>0.001</iyy><izz>0.001</izz></inertia>
+      </inertial>
+      <collision name="c">
+        <pose>0 0 0.14 0 0 0</pose>
+        <geometry><box><size>0.055 0.04 0.28</size></box></geometry>
+      </collision>
+      <visual name="v">
+        <pose>0 0 0.14 0 0 0</pose>
+        <geometry><box><size>0.055 0.04 0.28</size></box></geometry>
+        <material><ambient>0.80 0.80 0.80 1</ambient><diffuse>0.80 0.80 0.80 1</diffuse><specular>0.5 0.5 0.5 0.5</specular></material>
+      </visual>
+    </link>
+    <joint name="gripper_right_joint" type="prismatic">
+      <parent>wrist</parent>
+      <child>gripper_right</child>
+      <pose>0.07 0 0.14 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit><lower>0</lower><upper>0.18</upper><effort>80</effort><velocity>0.4</velocity></limit>
+        <dynamics><damping>5</damping><friction>2</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- Gazebo Plugins                                         -->
+    <!-- ══════════════════════════════════════════════════════ -->
+
+    <!-- Turret position controller -->
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>turret_joint</joint_name>
+      <topic>arm/turret_cmd</topic>
+      <p_gain>200</p_gain><i_gain>0.5</i_gain><d_gain>30</d_gain>
+      <i_max>50</i_max><i_min>-50</i_min><cmd_max>500</cmd_max><cmd_min>-500</cmd_min>
+    </plugin>
+
+    <!-- Shoulder position controller -->
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>shoulder_joint</joint_name>
+      <topic>arm/shoulder_cmd</topic>
+      <p_gain>250</p_gain><i_gain>0.5</i_gain><d_gain>40</d_gain>
+      <i_max>60</i_max><i_min>-60</i_min><cmd_max>600</cmd_max><cmd_min>-600</cmd_min>
+    </plugin>
+
+    <!-- Elbow position controller -->
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>elbow_joint</joint_name>
+      <topic>arm/elbow_cmd</topic>
+      <p_gain>180</p_gain><i_gain>0.5</i_gain><d_gain>25</d_gain>
+      <i_max>40</i_max><i_min>-40</i_min><cmd_max>400</cmd_max><cmd_min>-400</cmd_min>
+    </plugin>
+
+    <!-- Wrist position controller -->
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>wrist_joint</joint_name>
+      <topic>arm/wrist_cmd</topic>
+      <p_gain>80</p_gain><i_gain>0.2</i_gain><d_gain>12</d_gain>
+      <i_max>20</i_max><i_min>-20</i_min><cmd_max>150</cmd_max><cmd_min>-150</cmd_min>
+    </plugin>
+
+    <!-- Gripper left controller -->
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>gripper_left_joint</joint_name>
+      <topic>arm/gripper_cmd</topic>
+      <p_gain>40</p_gain><i_gain>0.1</i_gain><d_gain>5</d_gain>
+      <i_max>10</i_max><i_min>-10</i_min><cmd_max>80</cmd_max><cmd_min>-80</cmd_min>
+    </plugin>
+
+    <!-- Gripper right controller (mirrors left) -->
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>gripper_right_joint</joint_name>
+      <topic>arm/gripper_cmd</topic>
+      <p_gain>40</p_gain><i_gain>0.1</i_gain><d_gain>5</d_gain>
+      <i_max>10</i_max><i_min>-10</i_min><cmd_max>80</cmd_max><cmd_min>-80</cmd_min>
+    </plugin>
+
+    <!-- Joint state publisher -->
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>arm/joint_states</topic>
+      <update_rate>25</update_rate>
+    </plugin>
+
+  </model>
+</sdf>
